@@ -53,12 +53,20 @@ public class BoostInfoPlugin extends Plugin
 	@Inject
 	private PotionReminder potionReminder;
 
+	@Inject
+	private CombatTracker combatTracker;
+
+	@Inject
+	private ConfigManager configManager;
+
 	@Override
 	protected void startUp()
 	{
 		eventBus.register(timerTracker);
 		eventBus.register(statDecayTracker);
 		eventBus.register(potionReminder);
+		eventBus.register(combatTracker);
+		migrateShowSettings();
 		overlayManager.add(statBoostsOverlay);
 		overlayManager.add(timersOverlay);
 		overlayManager.add(otherTimersOverlay);
@@ -81,10 +89,32 @@ public class BoostInfoPlugin extends Plugin
 		overlayManager.remove(otherTimersOverlay);
 		overlayManager.remove(reminderOverlay);
 		eventBus.unregister(potionReminder);
+		eventBus.unregister(combatTracker);
+		combatTracker.reset();
 		eventBus.unregister(timerTracker);
 		eventBus.unregister(statDecayTracker);
 		timerTracker.clear();
 		statDecayTracker.reset();
+	}
+
+	/**
+	 * The separate "Show stat boosts" / "Show potion timers" settings became one Show setting:
+	 * carry over "Only when time is low" if either was using it.
+	 */
+	private void migrateShowSettings()
+	{
+		String stats = configManager.getConfiguration(BoostInfoConfig.GROUP, "statsDisplayMode");
+		String timers = configManager.getConfiguration(BoostInfoConfig.GROUP, "timersDisplayMode");
+		if (stats == null && timers == null)
+		{
+			return;
+		}
+		if ("WHEN_LOW".equals(stats) || "WHEN_LOW".equals(timers))
+		{
+			configManager.setConfiguration(BoostInfoConfig.GROUP, "showMode", ShowMode.WHEN_LOW);
+		}
+		configManager.unsetConfiguration(BoostInfoConfig.GROUP, "statsDisplayMode");
+		configManager.unsetConfiguration(BoostInfoConfig.GROUP, "timersDisplayMode");
 	}
 
 	@Provides

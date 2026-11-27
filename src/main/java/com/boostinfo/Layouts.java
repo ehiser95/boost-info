@@ -1,8 +1,10 @@
 package com.boostinfo;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.List;
+import net.runelite.client.ui.overlay.components.ComponentConstants;
 import net.runelite.client.ui.overlay.components.ComponentOrientation;
 import net.runelite.client.ui.overlay.components.PanelComponent;
 
@@ -18,11 +20,53 @@ final class Layouts
 	/**
 	 * @param timers true for timer lists (wider rows/tiles with a time bar)
 	 */
-	static void fill(PanelComponent panel, LayoutStyle style, Orientation orientation, List<Entry> entries, boolean timers)
+	static void fill(PanelComponent panel, BoostInfoConfig config, List<Entry> entries, boolean timers)
+	{
+		fill(panel, config, config.layout(), config.orientation(), entries, timers);
+	}
+
+	static void fill(PanelComponent panel, BoostInfoConfig config, LayoutStyle style, Orientation orientation,
+		List<Entry> entries, boolean timers)
 	{
 		boolean horizontal = orientation == Orientation.HORIZONTAL;
+		// Opacity settings: the panel behind everything, and each chip/tile box
+		panel.setBackgroundColor(withOpacity(ComponentConstants.STANDARD_BACKGROUND_COLOR, config.backgroundOpacity()));
+		int boxOpacity = config.boxOpacity();
 		switch (style)
 		{
+			case BADGES:
+				if (horizontal)
+				{
+					horizontalWrap(panel, 8 * (Badge.SIZE + 2), 2);
+				}
+				else
+				{
+					vertical(panel, 2);
+				}
+				for (Entry e : entries)
+				{
+					panel.getChildren().add(new Badge(e, withOpacity(Chip.BG, boxOpacity)));
+				}
+				break;
+			case MINI_CHIPS:
+				if (horizontal)
+				{
+					horizontalWrap(panel, 200, 2);
+				}
+				else
+				{
+					vertical(panel, 2);
+				}
+				for (Entry e : entries)
+				{
+					panel.getChildren().add(new Chip(e, withOpacity(Chip.BG, boxOpacity), true));
+				}
+				break;
+			case STRIP:
+				// One shared bar: the strip draws its own background, so the panel stays clear around it
+				vertical(panel, 0);
+				panel.getChildren().add(new Strip(entries, !horizontal, withOpacity(Chip.BG, boxOpacity)));
+				break;
 			case CHIPS:
 				if (horizontal)
 				{
@@ -35,7 +79,7 @@ final class Layouts
 				}
 				for (Entry e : entries)
 				{
-					panel.getChildren().add(new Chip(e));
+					panel.getChildren().add(new Chip(e, withOpacity(Chip.BG, boxOpacity)));
 				}
 				break;
 			case TILES:
@@ -49,7 +93,7 @@ final class Layouts
 				}
 				for (Entry e : entries)
 				{
-					panel.getChildren().add(new Tile(e, timers ? 84 : 40));
+					panel.getChildren().add(new Tile(e, timers ? 84 : 40, withOpacity(Tile.BG, boxOpacity)));
 				}
 				break;
 			case LIST:
@@ -86,6 +130,15 @@ final class Layouts
 				break;
 			}
 		}
+	}
+
+	/**
+	 * The colour with its alpha set from a 0-100% opacity setting.
+	 */
+	static Color withOpacity(Color c, int percent)
+	{
+		int alpha = Math.round(Math.max(0, Math.min(100, percent)) * 2.55f);
+		return new Color(c.getRed(), c.getGreen(), c.getBlue(), alpha);
 	}
 
 	private static void horizontalWrap(PanelComponent panel, int width, int gap)

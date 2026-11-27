@@ -14,10 +14,12 @@ public class TimersOverlay extends OverlayPanel
 {
 	private final TimerEntries entries;
 	private final BoostInfoConfig config;
+	private final CombatTracker combat;
 
 	@Inject
-	TimersOverlay(TimerEntries entries, BoostInfoConfig config)
+	TimersOverlay(TimerEntries entries, BoostInfoConfig config, CombatTracker combat)
 	{
+		this.combat = combat;
 		this.entries = entries;
 		this.config = config;
 		setPosition(OverlayPosition.TOP_RIGHT);
@@ -26,6 +28,10 @@ public class TimersOverlay extends OverlayPanel
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		if (!config.preview() && config.showMode() == ShowMode.IN_COMBAT && !combat.inCombat())
+		{
+			return null;
+		}
 		List<Entry> list = entries.potionTimers();
 		if (config.otherPlacement() == OtherPlacement.WITH_POTION_TIMERS)
 		{
@@ -35,7 +41,7 @@ public class TimersOverlay extends OverlayPanel
 		{
 			return null;
 		}
-		Layouts.fill(panelComponent, config.layout(), config.orientation(), list, true);
+		Layouts.fill(panelComponent, config, config.layout(), config.timersOrientation().resolve(config.orientation()), list, true);
 		return super.render(graphics);
 	}
 }

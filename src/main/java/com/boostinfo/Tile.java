@@ -19,10 +19,11 @@ import net.runelite.client.ui.overlay.components.TextComponent;
 class Tile implements LayoutableRenderableEntity
 {
 	private static final int ICON = 16;
-	private static final Color BG = new Color(36, 31, 25, 230);
+	static final Color BG = new Color(36, 31, 25);
 	private static final Color BAR_BG = new Color(58, 49, 40);
 
 	private final Entry entry;
+	private final Color bg;
 	private final int width;
 
 	@Setter
@@ -32,9 +33,10 @@ class Tile implements LayoutableRenderableEntity
 	@Getter
 	private final Rectangle bounds = new Rectangle();
 
-	Tile(Entry entry, int width)
+	Tile(Entry entry, int width, Color bg)
 	{
 		this.entry = entry;
+		this.bg = bg;
 		this.width = width;
 	}
 
@@ -53,7 +55,7 @@ class Tile implements LayoutableRenderableEntity
 			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, entry.alpha));
 		}
 
-		g.setColor(BG);
+		g.setColor(bg);
 		g.fillRect(x, y, width, height);
 
 		if (entry.icon != null)

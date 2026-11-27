@@ -35,7 +35,7 @@ public interface BoostInfoConfig extends Config
 	@ConfigSection(name = "Skill names", description = "Names and colours in the compact list.", position = 6, closedByDefault = true)
 	String SECTION_NAMES = "names";
 
-	@ConfigItem(keyName = "preview", name = "Preview", position = -3,
+	@ConfigItem(keyName = "preview", name = "Preview", position = -10,
 		description = "Show sample boosts, timers and the potion alert so you can see how your settings look "
 			+ "without drinking anything. Turn it off when you're done.")
 	default boolean preview()
@@ -43,31 +43,69 @@ public interface BoostInfoConfig extends Config
 		return false;
 	}
 
-	@ConfigItem(keyName = "orientation", name = "Orientation", position = -1,
-		description = "Lay the lists out top to bottom (vertical) or side by side (horizontal).")
+	@ConfigItem(keyName = "showMode", name = "Show", position = -9,
+		description = "When to show the stat boosts and all timers: always, only in combat, "
+			+ "or only once time is running low (set how low in each section). Preview always shows them.")
+	default ShowMode showMode()
+	{
+		return ShowMode.ALWAYS;
+	}
+
+	@ConfigItem(keyName = "combatTimeout", name = " ↳ Stay shown after combat", position = -8,
+		description = "With 'In combat only': keep showing them this long after you stop fighting.")
+	@Units(Units.SECONDS)
+	@Range(min = 1, max = 120)
+	default int combatTimeout()
+	{
+		return 10;
+	}
+
+	@ConfigItem(keyName = "orientation", name = "Orientation", position = -6,
+		description = "Lay the lists out top to bottom (vertical) or side by side (horizontal). "
+			+ "Each section can override this with its own Orientation setting.")
 	default Orientation orientation()
 	{
 		return Orientation.VERTICAL;
 	}
 
-	@ConfigItem(keyName = "layout", name = "Layout", position = -1,
+	@ConfigItem(keyName = "layout", name = "Layout", position = -7,
 		description = "Chips, tiles with a time bar, or a compact list. Applies to both the stat boosts and the potion timers.")
 	default LayoutStyle layout()
 	{
 		return LayoutStyle.LIST;
 	}
 
-	// Stat boosts
-
-	@ConfigItem(keyName = "statsDisplayMode", name = "Show stat boosts", position = 0, section = SECTION_STATS,
-		description = "Always, or only once a boost has this many seconds or less left.")
-	default DisplayMode statsDisplayMode()
+	@Range(max = 100)
+	@Units(Units.PERCENT)
+	@ConfigItem(keyName = "boxOpacity", name = "Box opacity", position = -5,
+		description = "How see-through each chip or tile box is. 0% is fully clear, 100% is solid. "
+			+ "The compact list has no boxes of its own; use Background opacity for it.")
+	default int boxOpacity()
 	{
-		return DisplayMode.ALWAYS;
+		return 90;
 	}
 
-	@ConfigItem(keyName = "statsThreshold", name = " ↳ Time left", position = 1, section = SECTION_STATS,
-		description = "With 'Only when time is low': show a boost once it has this long left. Also when the number turns amber.")
+	@Range(max = 100)
+	@Units(Units.PERCENT)
+	@ConfigItem(keyName = "backgroundOpacity", name = "Background opacity", position = -4,
+		description = "How see-through the panel behind the boxes (or behind the compact list) is. "
+			+ "0% hides it completely.")
+	default int backgroundOpacity()
+	{
+		return 61;
+	}
+
+	// Stat boosts
+
+	@ConfigItem(keyName = "statsOrientation", name = "Orientation", position = 0, section = SECTION_STATS,
+		description = "Lay the stat boosts out top to bottom or side by side, separately from the other lists.")
+	default SectionOrientation statsOrientation()
+	{
+		return SectionOrientation.SAME;
+	}
+
+	@ConfigItem(keyName = "statsThreshold", name = "Running low at", position = 1, section = SECTION_STATS,
+		description = "A boost with this long or less left turns amber, and shows when Show is 'When time is running low'.")
 	@Units(Units.SECONDS)
 	@Range(min = 1, max = 600)
 	default int statsThreshold()
@@ -91,15 +129,15 @@ public interface BoostInfoConfig extends Config
 
 	// Potion timers
 
-	@ConfigItem(keyName = "timersDisplayMode", name = "Show potion timers", position = 0, section = SECTION_TIMERS,
-		description = "Always, or only once a timer has this many seconds or less left.")
-	default DisplayMode timersDisplayMode()
+	@ConfigItem(keyName = "timersOrientation", name = "Orientation", position = 0, section = SECTION_TIMERS,
+		description = "Lay the potion timers out top to bottom or side by side, separately from the other lists.")
+	default SectionOrientation timersOrientation()
 	{
-		return DisplayMode.ALWAYS;
+		return SectionOrientation.SAME;
 	}
 
-	@ConfigItem(keyName = "timersThreshold", name = " ↳ Time left", position = 1, section = SECTION_TIMERS,
-		description = "With 'Only when time is low': show a timer once it has this long left.")
+	@ConfigItem(keyName = "timersThreshold", name = "Running low at", position = 1, section = SECTION_TIMERS,
+		description = "With Show set to 'When time is running low': show a potion timer or other timer once it has this long left.")
 	@Units(Units.SECONDS)
 	@Range(min = 1, max = 900)
 	default int timersThreshold()
@@ -364,59 +402,75 @@ public interface BoostInfoConfig extends Config
 		return OtherPlacement.OWN_LIST;
 	}
 
-	@ConfigItem(keyName = "otherStamina", name = "Stamina", position = 1, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherLayout", name = "Layout", position = 1, section = SECTION_OTHER,
+		description = "How the other timers look in their own list: the same as the stat boosts, or a different style. "
+			+ "The compact styles are smallest: icon badges (time in the corner), mini chips, or one strip. "
+			+ "When attached to another list, they use that list's layout.")
+	default OtherLayout otherLayout()
+	{
+		return OtherLayout.SAME;
+	}
+
+	@ConfigItem(keyName = "otherOrientation", name = "Orientation", position = 2, section = SECTION_OTHER,
+		description = "Lay the other timers out top to bottom or side by side, separately from the other lists.")
+	default SectionOrientation otherOrientation()
+	{
+		return SectionOrientation.SAME;
+	}
+
+	@ConfigItem(keyName = "otherStamina", name = "Stamina", position = 3, section = SECTION_OTHER, description = "")
 	default boolean otherStamina()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherAntifire", name = "Antifire / super antifire", position = 2, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherAntifire", name = "Antifire / super antifire", position = 4, section = SECTION_OTHER, description = "")
 	default boolean otherAntifire()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherAntipoison", name = "Antipoison / anti-venom", position = 3, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherAntipoison", name = "Antipoison / anti-venom", position = 5, section = SECTION_OTHER, description = "")
 	default boolean otherAntipoison()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherHeart", name = "Imbued / saturated heart cooldown", position = 4, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherHeart", name = "Imbued / saturated heart cooldown", position = 6, section = SECTION_OTHER, description = "")
 	default boolean otherHeart()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherVengeance", name = "Vengeance", position = 5, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherVengeance", name = "Vengeance", position = 7, section = SECTION_OTHER,
 		description = "Vengeance active (waiting to rebound) and its cooldown.")
 	default boolean otherVengeance()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherThralls", name = "Thralls", position = 9, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherThralls", name = "Thralls", position = 11, section = SECTION_OTHER,
 		description = "Thrall time left and the resurrection cooldown.")
 	default boolean otherThralls()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherArceuus", name = "Death charge / Ward / Corruption", position = 10, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherArceuus", name = "Arceuus spells and cooldowns", position = 12, section = SECTION_OTHER,
 		description = "Arceuus spells: Death charge (and cooldown), Ward of Arceuus, Corruption cooldown.")
 	default boolean otherArceuus()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherAmmo", name = "Equipped ammo", position = 11, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherAmmo", name = "Equipped ammo", position = 13, section = SECTION_OTHER,
 		description = "Your ammo slot and how much is left.")
 	default boolean otherAmmo()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherAmmoLow", name = " ↳ Low ammo warning", position = 12, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherAmmoLow", name = " ↳ Low ammo warning", position = 14, section = SECTION_OTHER,
 		description = "Show the ammo count in red at or below this many (0 = off).")
 	@Range(min = 0, max = 10000)
 	default int otherAmmoLow()
@@ -424,21 +478,95 @@ public interface BoostInfoConfig extends Config
 		return 100;
 	}
 
-	@ConfigItem(keyName = "otherSpells", name = "Magic Imbue / Charge / Teleblock", position = 6, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherSpells", name = "Magic Imbue / Charge / Teleblock", position = 8, section = SECTION_OTHER, description = "")
 	default boolean otherSpells()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherPotions", name = "Remedy / surge / goading", position = 7, section = SECTION_OTHER,
+	@ConfigItem(keyName = "otherPotions", name = "Remedy / surge / goading / moonlight", position = 9, section = SECTION_OTHER,
 		description = "Menaphite remedy, surge potion and goading potion.")
 	default boolean otherPotions()
 	{
 		return true;
 	}
 
-	@ConfigItem(keyName = "otherMisc", name = "Smouldering heart / DFS recharge", position = 8, section = SECTION_OTHER, description = "")
+	@ConfigItem(keyName = "otherMisc", name = "Smouldering heart & gland / DFS / Staff of the Dead", position = 10, section = SECTION_OTHER, description = "")
 	default boolean otherMisc()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherCannon", name = "Cannon", position = 15, section = SECTION_OTHER,
+		description = "Time until your cannon decays (25 minutes), or until a broken cannon is gone (10 minutes), with its world.")
+	default boolean otherCannon()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherFreezes", name = "Freezes", position = 16, section = SECTION_OTHER,
+		description = "How long you're frozen by Bind, Snare, Entangle or Ice spells. Ends early if you move.")
+	default boolean otherFreezes()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherTeleports", name = "Home / minigame teleport cooldowns", position = 17, section = SECTION_OTHER, description = "")
+	default boolean otherTeleports()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherLunar", name = "Heal Group / Spellbook Swap", position = 18, section = SECTION_OTHER, description = "")
+	default boolean otherLunar()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherToa", name = "ToA supplies", position = 19, section = SECTION_OTHER,
+		description = "Liquid adrenaline, silk dressing and blessed crystal scarab.")
+	default boolean otherToa()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherBosses", name = "Sire stun / GWD altar / Scurrius food", position = 20, section = SECTION_OTHER,
+		description = "Abyssal Sire stun, God Wars altar cooldown and Scurrius food pile cooldown.")
+	default boolean otherBosses()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherBossBuffs", name = "Moons curse / Doom / Stone of Jas", position = 21, section = SECTION_OTHER,
+		description = "Curse of the Moons and Colosseum Doom stacks, and the Stone of Jas empowerment.")
+	default boolean otherBossBuffs()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherBurn", name = "Burn damage", position = 22, section = SECTION_OTHER,
+		description = "Total burn damage built up on you.")
+	default boolean otherBurn()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherBurnNext", name = " ↳ Next burn hit", position = 23, section = SECTION_OTHER,
+		description = "Damage of the next burn hit.")
+	default boolean otherBurnNext()
+	{
+		return false;
+	}
+
+	@ConfigItem(keyName = "otherSkilling", name = "Pickpocket stun / Farmer's affinity", position = 24, section = SECTION_OTHER, description = "")
+	default boolean otherSkilling()
+	{
+		return true;
+	}
+
+	@ConfigItem(keyName = "otherTzhaar", name = "Fight Caves / Inferno timer", position = 25, section = SECTION_OTHER,
+		description = "How long you've been in the Fight Caves or Inferno. Pauses when you pause the run.")
+	default boolean otherTzhaar()
 	{
 		return true;
 	}

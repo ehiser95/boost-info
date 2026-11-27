@@ -2,11 +2,15 @@ package com.boostinfo;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * When the stat boosts and timers are shown. One setting for every list.
+ */
 @RequiredArgsConstructor
-public enum DisplayMode
+public enum ShowMode
 {
 	ALWAYS("Always"),
-	WHEN_LOW("Only when time is low"),
+	IN_COMBAT("In combat only"),
+	WHEN_LOW("When time is running low"),
 	;
 
 	private final String name;

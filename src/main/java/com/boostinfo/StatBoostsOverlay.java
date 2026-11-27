@@ -35,11 +35,14 @@ public class StatBoostsOverlay extends OverlayPanel
 	private final TimerTracker timers;
 	private final PotionReminder reminder;
 	private final TimerEntries timerEntries;
+	private final CombatTracker combat;
 
 	@Inject
 	StatBoostsOverlay(Client client, BoostInfoConfig config, SkillIconManager skillIconManager,
-		StatDecayTracker decay, TimerTracker timers, PotionReminder reminder, TimerEntries timerEntries)
+		StatDecayTracker decay, TimerTracker timers, PotionReminder reminder, TimerEntries timerEntries,
+		CombatTracker combat)
 	{
+		this.combat = combat;
 		this.reminder = reminder;
 		this.timerEntries = timerEntries;
 		this.client = client;
@@ -156,8 +159,13 @@ public class StatBoostsOverlay extends OverlayPanel
 			{
 				entries.addAll(timerEntries.otherTimers());
 			}
-			Layouts.fill(panelComponent, config.layout(), config.orientation(), entries, false);
+			Layouts.fill(panelComponent, config, config.layout(), config.statsOrientation().resolve(config.orientation()), entries, false);
 			return super.render(graphics);
+		}
+
+		if (config.showMode() == ShowMode.IN_COMBAT && !combat.inCombat())
+		{
+			return null;
 		}
 
 		Map<TimerType, TimerTracker.ActiveTimer> active = timers.snapshot();
@@ -216,7 +224,7 @@ public class StatBoostsOverlay extends OverlayPanel
 				int decayTicks = decay.ticksUntilExpired(boost);
 				double secondsLeft = Math.max(held, decayTicks < 0 ? -1 : decayTicks * 0.6);
 
-				if (config.statsDisplayMode() == DisplayMode.WHEN_LOW
+				if (config.showMode() == ShowMode.WHEN_LOW
 					&& (secondsLeft < 0 || secondsLeft > config.statsThreshold()))
 				{
 					continue;
@@ -272,7 +280,7 @@ public class StatBoostsOverlay extends OverlayPanel
 		{
 			return null;
 		}
-		Layouts.fill(panelComponent, config.layout(), config.orientation(), entries, false);
+		Layouts.fill(panelComponent, config, config.layout(), config.statsOrientation().resolve(config.orientation()), entries, false);
 		return super.render(graphics);
 	}
 }

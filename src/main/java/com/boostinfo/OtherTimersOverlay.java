@@ -14,10 +14,12 @@ public class OtherTimersOverlay extends OverlayPanel
 {
 	private final TimerEntries entries;
 	private final BoostInfoConfig config;
+	private final CombatTracker combat;
 
 	@Inject
-	OtherTimersOverlay(TimerEntries entries, BoostInfoConfig config)
+	OtherTimersOverlay(TimerEntries entries, BoostInfoConfig config, CombatTracker combat)
 	{
+		this.combat = combat;
 		this.entries = entries;
 		this.config = config;
 		setPosition(OverlayPosition.TOP_RIGHT);
@@ -30,12 +32,17 @@ public class OtherTimersOverlay extends OverlayPanel
 		{
 			return null;
 		}
+		if (!config.preview() && config.showMode() == ShowMode.IN_COMBAT && !combat.inCombat())
+		{
+			return null;
+		}
 		List<Entry> list = entries.otherTimers();
 		if (list.isEmpty())
 		{
 			return null;
 		}
-		Layouts.fill(panelComponent, config.layout(), config.orientation(), list, true);
+		Layouts.fill(panelComponent, config, config.otherLayout().resolve(config.layout()),
+			config.otherOrientation().resolve(config.orientation()), list, true);
 		return super.render(graphics);
 	}
 }

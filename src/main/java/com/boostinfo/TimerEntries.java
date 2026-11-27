@@ -59,6 +59,11 @@ class TimerEntries
 			return otherSamples();
 		}
 		List<Entry> list = build(t -> t.getGroup() == TimerType.Group.OTHER);
+		Entry tzhaar = tzhaarEntry();
+		if (tzhaar != null)
+		{
+			list.add(0, tzhaar);
+		}
 		Entry ammo = ammoEntry();
 		if (ammo != null)
 		{
@@ -90,6 +95,27 @@ class TimerEntries
 		Color color = config.otherAmmoLow() > 0 && qty <= config.otherAmmoLow() ? Colors.WARN : Colors.GOOD;
 		String name = itemManager.getItemComposition(ammo.getId()).getName();
 		return new Entry(itemManager.getImage(ammo.getId()), name, formatCount(qty), color, 1f, -1);
+	}
+
+	/**
+	 * Fight Caves / Inferno run time, counting up.
+	 */
+	private Entry tzhaarEntry()
+	{
+		if (!config.otherTzhaar())
+		{
+			return null;
+		}
+		Map.Entry<TimerType, Long> elapsed = timers.tzhaarElapsed();
+		if (elapsed == null)
+		{
+			return null;
+		}
+		long secs = elapsed.getValue();
+		String time = secs >= 3600
+			? String.format("%d:%02d:%02d", secs / 3600, (secs / 60) % 60, secs % 60)
+			: String.format("%d:%02d", secs / 60, secs % 60);
+		return new Entry(icon(elapsed.getKey()), elapsed.getKey().getDisplayName(), time, Colors.GOOD, 1f, -1);
 	}
 
 	private static String formatCount(int n)
@@ -129,6 +155,10 @@ class TimerEntries
 		list.add(new Entry(icon(TimerType.THRALL), "Thrall", "0:42", Colors.GOOD, 1f, 0.7));
 		list.add(new Entry(icon(TimerType.DEATH_CHARGE), "Death charge", "0:58", Colors.GOOD, 1f, 0.95));
 		list.add(new Entry(icon(TimerType.VENGEANCE_ACTIVE), "Vengeance", "Active", Colors.GOOD, 1f, -1));
+		list.add(new Entry(icon(TimerType.CANNON), "Cannon (W" + Math.max(1, client.getWorld()) + ")", "18:32", Colors.GOOD, 1f, 0.74));
+		list.add(new Entry(icon(TimerType.ICE_BARRAGE), "Ice barrage", "0:12", Colors.LOW, 1f, 0.6));
+		list.add(new Entry(icon(TimerType.HOME_TELEPORT), "Home teleport", "24:10", Colors.GOOD, 1f, 0.8));
+		list.add(new Entry(icon(TimerType.COLOSSEUM_DOOM), "Doom", "3", Colors.GOOD, 1f, -1));
 		list.add(new Entry(itemManager.getImage(ItemID.DRAGON_ARROW), "Dragon arrow",
 			formatCount(config.otherAmmoLow() > 0 ? config.otherAmmoLow() : 87), config.otherAmmoLow() > 0 ? Colors.WARN : Colors.GOOD, 1f, -1));
 		return list;
@@ -147,6 +177,14 @@ class TimerEntries
 			}
 
 			TimerTracker.ActiveTimer t = e.getValue();
+			String name = t.suffix == null ? type.getDisplayName() : type.getDisplayName() + " (" + t.suffix + ")";
+			if (TimerType.COUNTERS.contains(type))
+			{
+				// Stacks / damage: a number. Curse of the Moons (Blue Moon) goes red at 18
+				Color c = type == TimerType.CURSE_OF_THE_MOONS_BLUE && t.count >= 18 ? Colors.WARN : Colors.GOOD;
+				entries.add(new Entry(icon(type), name, String.valueOf(t.count), c, 1f, -1));
+				continue;
+			}
 			if (t.endTick >= TimerTracker.INDICATOR)
 			{
 				// On/off effects with no countdown (Vengeance waiting to rebound)
@@ -154,7 +192,7 @@ class TimerEntries
 				continue;
 			}
 			double secondsLeft = timers.secondsLeft(t);
-			if (config.timersDisplayMode() == DisplayMode.WHEN_LOW && secondsLeft > config.timersThreshold())
+			if (config.showMode() == ShowMode.WHEN_LOW && secondsLeft > config.timersThreshold())
 			{
 				continue;
 			}
@@ -170,7 +208,7 @@ class TimerEntries
 			}
 
 			float alpha = fades(type) && secondsLeft <= config.fadeThreshold() ? Colors.pulse() : 1f;
-			entries.add(new Entry(icon(type), type.getDisplayName(), Colors.formatTime(secondsLeft), color, alpha,
+			entries.add(new Entry(icon(type), name, Colors.formatTime(secondsLeft), color, alpha,
 				timers.fractionLeft(t)));
 		}
 		return entries;
@@ -224,6 +262,28 @@ class TimerEntries
 						return config.otherThralls();
 					case "arceuus":
 						return config.otherArceuus();
+					case "cannon":
+						return config.otherCannon();
+					case "freezes":
+						return config.otherFreezes();
+					case "teleports":
+						return config.otherTeleports();
+					case "lunar":
+						return config.otherLunar();
+					case "toa":
+						return config.otherToa();
+					case "bosses":
+						return config.otherBosses();
+					case "bossBuffs":
+						return config.otherBossBuffs();
+					case "burn":
+						return config.otherBurn();
+					case "burnNext":
+						return config.otherBurnNext();
+					case "skilling":
+						return config.otherSkilling();
+					case "tzhaar":
+						return config.otherTzhaar();
 					default:
 						return config.otherMisc();
 				}
@@ -258,6 +318,12 @@ class TimerEntries
 		}
 
 		TimerTracker.ActiveTimer self = active.get(type);
+		// A moonlight potion also sets the divine defence timer: show only the moonlight potion
+		TimerTracker.ActiveTimer moonlight = active.get(TimerType.MOONLIGHT_POTION);
+		if (type == TimerType.DIVINE_DEFENCE && moonlight != null && moonlight.endTick >= self.endTick - 1)
+		{
+			return true;
+		}
 		for (TimerType combined : new TimerType[]{TimerType.DIVINE_COMBAT, TimerType.DIVINE_BASTION, TimerType.DIVINE_BATTLEMAGE})
 		{
 			TimerTracker.ActiveTimer c = active.get(combined);
