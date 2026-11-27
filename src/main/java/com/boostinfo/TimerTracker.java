@@ -64,6 +64,9 @@ public class TimerTracker
 	static final int INDICATOR = Integer.MAX_VALUE / 2;
 	private static final String PRAYER_ENHANCE_EXPIRED = "Your prayer enhance effect has worn off.";
 
+	/** Colour codes like "@mes_hl_mag@" at the start of game messages. */
+	private static final Pattern MESSAGE_CODES = Pattern.compile("@[a-z_]+@");
+
 	private static final int FIGHT_CAVES_REGION = 9551;
 	private static final int INFERNO_REGION = 9043;
 	private static final int ECLIPSE_MOON_REGION = 6038;
@@ -432,7 +435,8 @@ public class TimerTracker
 			return;
 		}
 
-		String message = Text.removeTags(e.getMessage());
+		// Strip <col> tags and the newer "@mes_hl_mag@"-style colour codes the game puts in front of some messages
+		String message = MESSAGE_CODES.matcher(Text.removeTags(e.getMessage())).replaceAll("").trim();
 		if (message.startsWith("You drink some of your") && message.contains("prayer enhance"))
 		{
 			setDuration(TimerType.PRAYER_ENHANCE, PRAYER_ENHANCE_TICKS);
@@ -443,13 +447,19 @@ public class TimerTracker
 		}
 		else if (message.startsWith("You resurrect a ") && message.endsWith(" thrall."))
 		{
-			// A thrall lasts 1 tick per (boosted) Magic level, doubled with the Master combat achievements tier
-			int ticks = client.getBoostedSkillLevel(net.runelite.api.Skill.MAGIC);
-			if (client.getVarbitValue(VarbitID.CA_TIER_STATUS_MASTER) == 2)
+			// A thrall lasts 1 tick (0.6s) per boosted Magic level, doubled once the Master combat
+			// achievements tier is complete (Grandmaster requires Master, so it's doubled there too)
+			int ticks = client.getBoostedSkillLevel(Skill.MAGIC);
+			if (client.getVarbitValue(VarbitID.CA_TIER_STATUS_MASTER) == 2
+				|| client.getVarbitValue(VarbitID.CA_TIER_STATUS_GRANDMASTER) == 2)
 			{
-				ticks += ticks;
+				ticks *= 2;
 			}
 			setDuration(TimerType.THRALL, ticks);
+		}
+		else if (message.startsWith("Your ") && message.endsWith(" thrall returns to the grave."))
+		{
+			remove(TimerType.THRALL);
 		}
 		else if (message.endsWith("Your defence against Arceuus magic has been strengthened."))
 		{
