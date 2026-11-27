@@ -1,5 +1,5 @@
 # Boost Info
-A clean, compact list of stat boosts and potion timers (overload, smelling salts, prayer regeneration, prayer enhance, divine potions), with a red warning before each overload/salts refresh and an optional fade when a timer runs low.
+Stat boosts, potion timers and every timer and buff from RuneLite's Timers & Buffs in one clean, compact overlay. Includes a red warning before each overload/salts refresh, colour levels as boosts wear down, a "Use [potion]" reminder, and chip, tile, list and compact layouts.
 
 ## Credits
 

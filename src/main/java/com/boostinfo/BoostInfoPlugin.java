@@ -15,8 +15,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 @Slf4j
 @PluginDescriptor(
 	name = "Boost Info",
-	description = "A clean list of stat boosts and potion timers, with refresh warnings and fading",
-	tags = {"boosts", "overload", "salts", "prayer", "divine", "timers", "potion"}
+	description = "Stat boosts, potion timers and every Timers & Buffs timer in one clean, compact overlay",
+	tags = {"boosts", "overload", "salts", "prayer", "divine", "timers", "buffs", "potion", "thrall", "cannon"}
 )
 public class BoostInfoPlugin extends Plugin
 {
